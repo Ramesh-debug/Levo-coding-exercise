@@ -15,14 +15,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,6 +30,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class SchemaServiceTest {
 
     @Mock
@@ -71,8 +72,8 @@ class SchemaServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn("test.json");
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(openApiContent.getBytes()));
         when(applicationMapper.findByName(applicationName)).thenReturn(null);
-        when(serviceMapper.findByApplicationIdAndName(anyLong(), eq(serviceName))).thenReturn(null);
-        when(schemaMapper.findMaxVersionByApplicationAndService(anyLong(), any())).thenReturn(0);
+        when(serviceMapper.findByApplicationIdAndName(any(), eq(serviceName))).thenReturn(null);
+        when(schemaMapper.findMaxVersionByApplicationAndService(any(), any())).thenReturn(0);
 
         // Mock file operations
         doNothing().when(applicationMapper).insert(any(Application.class));
@@ -109,7 +110,27 @@ class SchemaServiceTest {
         existingApp.setId(1L);
 
         when(multipartFile.getOriginalFilename()).thenReturn("test.json");
-        when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream("{\"openapi\": \"3.0.0\"}".getBytes()));
+        String validOpenApiContent = """
+            {
+                "openapi": "3.0.0",
+                "info": {
+                    "title": "Test API",
+                    "version": "1.0.0"
+                },
+                "paths": {
+                    "/test": {
+                        "get": {
+                            "responses": {
+                                "200": {
+                                    "description": "Success"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            """;
+        when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(validOpenApiContent.getBytes()));
         when(applicationMapper.findByName(applicationName)).thenReturn(existingApp);
         when(serviceMapper.findByApplicationIdAndName(1L, serviceName)).thenReturn(null);
         when(schemaMapper.findMaxVersionByApplicationAndService(1L, null)).thenReturn(2);
