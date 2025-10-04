@@ -40,19 +40,16 @@ public class SchemaServiceImpl implements SchemaService {
 
     @Override
     public SchemaResponse uploadSchema(SchemaUploadRequest request) throws Exception {
-        // Validate the OpenAPI spec
         if (!validateOpenApiSpec(request.getFile())) {
             throw new IllegalArgumentException("Invalid OpenAPI specification");
         }
 
-        // Get or create application
         Application application = applicationMapper.findByName(request.getApplicationName());
         if (application == null) {
             application = new Application(request.getApplicationName());
             applicationMapper.insert(application);
         }
 
-        // Get or create service (if provided)
         com.project.coding_exercise.db.model.Service service = null;
         if (request.getServiceName() != null && !request.getServiceName().trim().isEmpty()) {
             service = serviceMapper.findByApplicationIdAndName(application.getId(), request.getServiceName());
@@ -62,29 +59,22 @@ public class SchemaServiceImpl implements SchemaService {
             }
         }
 
-        // Get next version number
         Integer nextVersion = schemaMapper.findMaxVersionByApplicationAndService(application.getId(), service != null ? service.getId() : null) + 1;
-
-        // Create storage directory structure
         String directoryPath = createDirectoryStructure(application.getName(), service != null ? service.getName() : null, nextVersion);
         
-        // Save file
         String fileName = request.getFile().getOriginalFilename();
         String filePath = directoryPath + File.separator + fileName;
         
-        // Ensure directory exists and save file
         File targetFile = new File(filePath);
         if (!targetFile.getParentFile().exists()) {
             targetFile.getParentFile().mkdirs();
         }
         request.getFile().transferTo(targetFile);
 
-        // Save schema metadata to database
         Schema schema = new Schema(application.getId(), service != null ? service.getId() : null, nextVersion, filePath);
         schema.setUploadedAt(LocalDateTime.now());
         schemaMapper.insert(schema);
 
-        // Return response
         return createSchemaResponse(schema, application.getName(), service != null ? service.getName() : null, filePath);
     }
 
@@ -145,7 +135,6 @@ public class SchemaServiceImpl implements SchemaService {
             ParseOptions options = new ParseOptions();
             options.setResolve(true);
             
-            // Read the InputStream content as String
             String content = new String(file.getInputStream().readAllBytes());
             SwaggerParseResult result = parser.readContents(content, null, options);
             return result.getOpenAPI() != null && result.getMessages().isEmpty();
@@ -155,7 +144,6 @@ public class SchemaServiceImpl implements SchemaService {
     }
 
     private String createDirectoryStructure(String applicationName, String serviceName, Integer version) throws IOException {
-        // Ensure we use absolute path
         String absoluteStoragePath = new File(storagePath).getAbsolutePath();
         String basePath = absoluteStoragePath + File.separator + applicationName;
         if (serviceName != null && !serviceName.trim().isEmpty()) {

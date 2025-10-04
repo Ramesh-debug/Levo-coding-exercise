@@ -27,7 +27,6 @@ class SchemaControllerTest {
 
     @Test
     void testUploadSchema() throws Exception {
-        // Arrange
         SchemaResponse mockResponse = new SchemaResponse();
         mockResponse.setId(1L);
         mockResponse.setApplicationName("test-app");
@@ -45,7 +44,6 @@ class SchemaControllerTest {
                 "{\"openapi\": \"3.0.0\"}".getBytes()
         );
 
-        // Act & Assert
         mockMvc.perform(multipart("/schemas/upload")
                 .file(file)
                 .param("applicationName", "test-app")
@@ -58,7 +56,6 @@ class SchemaControllerTest {
 
     @Test
     void testGetLatestSchema() throws Exception {
-        // Arrange
         SchemaResponse mockResponse = new SchemaResponse();
         mockResponse.setId(1L);
         mockResponse.setApplicationName("test-app");
@@ -68,7 +65,6 @@ class SchemaControllerTest {
 
         when(schemaService.getLatestSchema("test-app", "test-service")).thenReturn(mockResponse);
 
-        // Act & Assert
         mockMvc.perform(get("/schemas/test-app/test-service/latest"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.applicationName").value("test-app"))
@@ -78,7 +74,6 @@ class SchemaControllerTest {
 
     @Test
     void testGetSchemaByVersion() throws Exception {
-        // Arrange
         SchemaResponse mockResponse = new SchemaResponse();
         mockResponse.setId(1L);
         mockResponse.setApplicationName("test-app");
@@ -88,7 +83,6 @@ class SchemaControllerTest {
 
         when(schemaService.getSchemaByVersion("test-app", "test-service", 1)).thenReturn(mockResponse);
 
-        // Act & Assert
         mockMvc.perform(get("/schemas/test-app/test-service/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.applicationName").value("test-app"))
@@ -98,7 +92,6 @@ class SchemaControllerTest {
 
     @Test
     void testGetLatestApplicationSchema() throws Exception {
-        // Arrange
         SchemaResponse mockResponse = new SchemaResponse();
         mockResponse.setId(1L);
         mockResponse.setApplicationName("test-app");
@@ -108,7 +101,6 @@ class SchemaControllerTest {
 
         when(schemaService.getLatestSchema("test-app", null)).thenReturn(mockResponse);
 
-        // Act & Assert
         mockMvc.perform(get("/schemas/test-app/latest"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.applicationName").value("test-app"))
@@ -118,7 +110,6 @@ class SchemaControllerTest {
 
     @Test
     void testUploadSchema_InvalidSchema() throws Exception {
-        // Arrange
         when(schemaService.uploadSchema(any())).thenThrow(new IllegalArgumentException("Invalid schema"));
 
         MockMultipartFile file = new MockMultipartFile(
@@ -128,7 +119,6 @@ class SchemaControllerTest {
                 "{\"invalid\": \"json\"}".getBytes()
         );
 
-        // Act & Assert
         mockMvc.perform(multipart("/schemas/upload")
                 .file(file)
                 .param("applicationName", "test-app")
@@ -138,7 +128,6 @@ class SchemaControllerTest {
 
     @Test
     void testGetApplicationSchemaByVersion() throws Exception {
-        // Arrange
         SchemaResponse mockResponse = new SchemaResponse();
         mockResponse.setId(1L);
         mockResponse.setApplicationName("test-app");
@@ -148,7 +137,6 @@ class SchemaControllerTest {
 
         when(schemaService.getSchemaByVersion("test-app", null, 2)).thenReturn(mockResponse);
 
-        // Act & Assert
         mockMvc.perform(get("/schemas/test-app/2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.applicationName").value("test-app"))
@@ -158,11 +146,9 @@ class SchemaControllerTest {
 
     @Test
     void testGetLatestSchema_NotFound() throws Exception {
-        // Arrange
         when(schemaService.getLatestSchema("nonexistent-app", "nonexistent-service"))
                 .thenThrow(new IllegalArgumentException("Schema not found"));
 
-        // Act & Assert
         mockMvc.perform(get("/schemas/nonexistent-app/nonexistent-service/latest"))
                 .andExpect(status().isNotFound());
     }

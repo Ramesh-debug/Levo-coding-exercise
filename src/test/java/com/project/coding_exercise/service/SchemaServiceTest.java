@@ -55,7 +55,6 @@ class SchemaServiceTest {
 
     @Test
     void testUploadSchema_NewApplicationAndService() throws Exception {
-        // Arrange
         String applicationName = "test-app";
         String serviceName = "test-service";
         String openApiContent = """
@@ -75,7 +74,6 @@ class SchemaServiceTest {
         when(serviceMapper.findByApplicationIdAndName(any(), eq(serviceName))).thenReturn(null);
         when(schemaMapper.findMaxVersionByApplicationAndService(any(), any())).thenReturn(0);
 
-        // Mock file operations
         doNothing().when(applicationMapper).insert(any(Application.class));
         doNothing().when(serviceMapper).insert(any(Service.class));
         doNothing().when(schemaMapper).insert(any(Schema.class));
@@ -85,10 +83,8 @@ class SchemaServiceTest {
         request.setServiceName(serviceName);
         request.setFile(multipartFile);
 
-        // Act
         SchemaResponse response = schemaService.uploadSchema(request);
 
-        // Assert
         assertNotNull(response);
         assertEquals(applicationName, response.getApplicationName());
         assertEquals(serviceName, response.getServiceName());
@@ -103,7 +99,6 @@ class SchemaServiceTest {
 
     @Test
     void testUploadSchema_ExistingApplication() throws Exception {
-        // Arrange
         String applicationName = "existing-app";
         String serviceName = "test-service";
         Application existingApp = new Application(applicationName);
@@ -143,18 +138,15 @@ class SchemaServiceTest {
         request.setServiceName(serviceName);
         request.setFile(multipartFile);
 
-        // Act
         SchemaResponse response = schemaService.uploadSchema(request);
 
-        // Assert
         assertNotNull(response);
-        assertEquals(3, response.getVersion()); // Should increment from 2 to 3
+        assertEquals(3, response.getVersion());
         verify(applicationMapper, never()).insert(any(Application.class));
     }
 
     @Test
     void testGetLatestSchema() throws Exception {
-        // Arrange
         String applicationName = "test-app";
         String serviceName = "test-service";
         Application app = new Application(applicationName);
@@ -169,28 +161,23 @@ class SchemaServiceTest {
         when(serviceMapper.findByApplicationIdAndName(1L, serviceName)).thenReturn(service);
         when(schemaMapper.findLatestByApplicationAndService(1L, 1L)).thenReturn(schema);
 
-        // Create a temporary file for testing
         Path tempFile = Files.createTempFile("test-schema", ".json");
         Files.write(tempFile, "{\"openapi\": \"3.0.0\"}".getBytes());
         schema.setFilePath(tempFile.toString());
 
-        // Act
         SchemaResponse response = schemaService.getLatestSchema(applicationName, serviceName);
 
-        // Assert
         assertNotNull(response);
         assertEquals(applicationName, response.getApplicationName());
         assertEquals(serviceName, response.getServiceName());
         assertEquals(2, response.getVersion());
         assertNotNull(response.getContent());
 
-        // Cleanup
         Files.deleteIfExists(tempFile);
     }
 
     @Test
     void testGetSchemaByVersion() throws Exception {
-        // Arrange
         String applicationName = "test-app";
         String serviceName = "test-service";
         Integer version = 1;
@@ -206,28 +193,23 @@ class SchemaServiceTest {
         when(serviceMapper.findByApplicationIdAndName(1L, serviceName)).thenReturn(service);
         when(schemaMapper.findByApplicationServiceAndVersion(1L, 1L, version)).thenReturn(schema);
 
-        // Create a temporary file for testing
         Path tempFile = Files.createTempFile("test-schema", ".json");
         Files.write(tempFile, "{\"openapi\": \"3.0.0\"}".getBytes());
         schema.setFilePath(tempFile.toString());
 
-        // Act
         SchemaResponse response = schemaService.getSchemaByVersion(applicationName, serviceName, version);
 
-        // Assert
         assertNotNull(response);
         assertEquals(applicationName, response.getApplicationName());
         assertEquals(serviceName, response.getServiceName());
         assertEquals(version, response.getVersion());
         assertNotNull(response.getContent());
 
-        // Cleanup
         Files.deleteIfExists(tempFile);
     }
 
     @Test
     void testValidateOpenApiSpec_ValidJson() throws Exception {
-        // Arrange
         String validOpenApiJson = """
             {
                 "openapi": "3.0.0",
@@ -251,24 +233,19 @@ class SchemaServiceTest {
 
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(validOpenApiJson.getBytes()));
 
-        // Act
         boolean isValid = schemaService.validateOpenApiSpec(multipartFile);
 
-        // Assert
         assertTrue(isValid);
     }
 
     @Test
     void testValidateOpenApiSpec_InvalidJson() throws Exception {
-        // Arrange
         String invalidJson = "{\"invalid\": \"json\"}";
 
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(invalidJson.getBytes()));
 
-        // Act
         boolean isValid = schemaService.validateOpenApiSpec(multipartFile);
 
-        // Assert
         assertFalse(isValid);
     }
 }
