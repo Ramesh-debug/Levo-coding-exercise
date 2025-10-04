@@ -71,10 +71,17 @@ public class SchemaServiceImpl implements SchemaService {
         // Save file
         String fileName = request.getFile().getOriginalFilename();
         String filePath = directoryPath + File.separator + fileName;
-        request.getFile().transferTo(new File(filePath));
+        
+        // Ensure directory exists and save file
+        File targetFile = new File(filePath);
+        if (!targetFile.getParentFile().exists()) {
+            targetFile.getParentFile().mkdirs();
+        }
+        request.getFile().transferTo(targetFile);
 
         // Save schema metadata to database
         Schema schema = new Schema(application.getId(), service != null ? service.getId() : null, nextVersion, filePath);
+        schema.setUploadedAt(LocalDateTime.now());
         schemaMapper.insert(schema);
 
         // Return response
@@ -121,8 +128,7 @@ public class SchemaServiceImpl implements SchemaService {
             }
         }
 
-        Schema schema = schemaMapper.findByApplicationServiceAndVersion(application.getId(), 
-            service != null ? service.getId() : null, version);
+        Schema schema = schemaMapper.findByApplicationServiceAndVersion(application.getId(), service != null ? service.getId() : null, version);
         if (schema == null) {
             throw new IllegalArgumentException("Schema not found for application: " + applicationName + 
                 (serviceName != null ? " and service: " + serviceName : "") + " version: " + version);
@@ -149,7 +155,9 @@ public class SchemaServiceImpl implements SchemaService {
     }
 
     private String createDirectoryStructure(String applicationName, String serviceName, Integer version) throws IOException {
-        String basePath = storagePath + File.separator + applicationName;
+        // Ensure we use absolute path
+        String absoluteStoragePath = new File(storagePath).getAbsolutePath();
+        String basePath = absoluteStoragePath + File.separator + applicationName;
         if (serviceName != null && !serviceName.trim().isEmpty()) {
             basePath += File.separator + serviceName;
         }

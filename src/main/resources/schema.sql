@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS applications (
     name VARCHAR(255) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-.
+
 -- Create services table
 CREATE TABLE IF NOT EXISTS services (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

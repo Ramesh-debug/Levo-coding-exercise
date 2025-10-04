@@ -5,15 +5,13 @@ import com.project.coding_exercise.service.SchemaService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -24,7 +22,7 @@ class SchemaControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private SchemaService schemaService;
 
     @Test
@@ -136,6 +134,26 @@ class SchemaControllerTest {
                 .param("applicationName", "test-app")
                 .param("serviceName", "test-service"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testGetApplicationSchemaByVersion() throws Exception {
+        // Arrange
+        SchemaResponse mockResponse = new SchemaResponse();
+        mockResponse.setId(1L);
+        mockResponse.setApplicationName("test-app");
+        mockResponse.setServiceName(null);
+        mockResponse.setVersion(2);
+        mockResponse.setContent("{\"openapi\": \"3.0.0\"}");
+
+        when(schemaService.getSchemaByVersion("test-app", null, 2)).thenReturn(mockResponse);
+
+        // Act & Assert
+        mockMvc.perform(get("/schemas/test-app/2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.applicationName").value("test-app"))
+                .andExpect(jsonPath("$.serviceName").isEmpty())
+                .andExpect(jsonPath("$.version").value(2));
     }
 
     @Test
